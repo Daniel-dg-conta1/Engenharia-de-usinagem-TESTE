@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Calculator, Info, Zap, Clock, TrendingUp, BarChart, Settings } from 'lucide-react';
+import { ArrowLeft, Calculator, Info, Zap, Clock, TrendingUp, BarChart as BarChartIcon, Settings } from 'lucide-react';
 import { PageID } from '../types';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface CalculatorsProps {
   activePage: PageID;
@@ -25,8 +26,8 @@ export default function Calculators({ activePage, onNavigateHome }: CalculatorsP
 }
 
 // Helper: UI Components
-const Card = ({ children, title, description }: { children?: React.ReactNode, title: string, description?: string }) => (
-  <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+const Card = ({ children, title, description, className }: { children?: React.ReactNode, title: string, description?: string, className?: string }) => (
+  <div className={`bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm ${className}`}>
     <div className="p-6 border-b border-gray-100">
       <h3 className="text-xl font-bold text-gray-900">{title}</h3>
       {description && <p className="text-sm text-gray-500 mt-1">{description}</p>}
@@ -224,12 +225,17 @@ function PotenciaCalculator() {
   const [vc, setVc] = useState('150');
   const [eff, setEff] = useState('0.8');
 
-  const pc = (parseFloat(fc) * parseFloat(vc) / 60000).toFixed(2);
-  const pmot = (parseFloat(pc) / parseFloat(eff)).toFixed(2);
+  const pc = parseFloat((parseFloat(fc) * parseFloat(vc) / 60000).toFixed(2));
+  const pmot = parseFloat((pc / parseFloat(eff)).toFixed(2));
+  const pconsumed = parseFloat((pmot - pc).toFixed(2));
+
+  const chartData = [
+    { name: 'Potência', 'Potência de Corte (kW)': pc, 'Perdas (kW)': pconsumed },
+  ];
 
   return (
-    <div className="grid lg:grid-cols-2 gap-8">
-      <Card title="Potência de Corte" description="Verificação energética do processo.">
+    <div className="grid lg:grid-cols-5 gap-8">
+      <Card title="Potência de Corte" description="Verificação energética do processo." className="lg:col-span-2">
         <div className="grid gap-6">
           <InputGroup label="Força de Corte (Fc)" value={fc} onChange={setFc} unit="N" />
           <InputGroup label="Velocidade de Corte (Vc)" value={vc} onChange={setVc} unit="m/min" />
@@ -240,10 +246,23 @@ function PotenciaCalculator() {
           </div>
         </div>
       </Card>
-      <div className="bg-gray-50 p-6 rounded-xl text-sm text-gray-600 space-y-4">
-        <h4 className="font-bold text-gray-900 flex items-center gap-2"><Zap size={16} /> Dimensionamento</h4>
-        <p>A potência mecânica necessária deve ser menor que a potência nominal do motor da máquina, considerando o rendimento das engrenagens e rolamentos.</p>
-        <p className="font-mono bg-white p-2 border border-gray-200 rounded">Pc (kW) = (Fc · Vc) / 60000</p>
+      <div className="lg:col-span-3 bg-gray-50 p-6 rounded-xl text-sm text-gray-600 space-y-4">
+        <h4 className="font-bold text-gray-900 flex items-center gap-2"><Zap size={16} /> Gráfico de Potência</h4>
+        <div style={{ width: '100%', height: 200 }}>
+            <ResponsiveContainer>
+                <BarChart data={chartData} layout="vertical" margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis type="category" dataKey="name" />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="Potência de Corte (kW)" stackId="a" fill="#3b82f6" />
+                    <Bar dataKey="Perdas (kW)" stackId="a" fill="#f59e0b" />
+                </BarChart>
+            </ResponsiveContainer>
+        </div>
+        <p className="text-xs text-center text-gray-400 mt-2">Visualização da potência consumida pelo motor vs. a potência efetivamente usada no corte.</p>
+        <p className="font-mono bg-white p-2 border border-gray-200 rounded text-center">Pc (kW) = (Fc · Vc) / 60000</p>
       </div>
     </div>
   );
